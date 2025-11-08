@@ -34,7 +34,7 @@ export default function LeftBar() {
     setOpenSchool(openSchool === school ? null : school);
 
   return (
-    <aside className="w-72 min-h-screen bg-black border-r border-white/10 p-5 text-white overflow-y-auto font-light tracking-wide">
+    <aside className="w-72 min-h-screen bg-black border-r border-white/10 p-5 text-white overflow-y-auto font-light tracking-wide z-10">
       {/* ASCII Logo */}
       <div className="mb-7 text-center">
         <Link href="/" className="inline-block group select-none">

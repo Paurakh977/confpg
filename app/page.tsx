@@ -11,7 +11,7 @@ import {
   ListDetails,
 } from "tabler-icons-react";
 import { departmentColors } from "@/lib/departmentColors";
-import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 
 interface Confession {
   id: string;
@@ -53,10 +53,8 @@ export default function HomePage() {
         let url = "/api/confessions";
 
         if (program) {
-          // ✅ department filter
           url = `/api/confessions?department=${program.toUpperCase()}`;
         } else if (search) {
-          // ✅ search filter
           url = `/api/confessions?search=${encodeURIComponent(search)}`;
         }
 
@@ -121,7 +119,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col space-y-6 w-full relative">
       {/* Confession Composer */}
-      <div className="bg-black border border-white/20 rounded-2xl p-4 space-y-3">
+      <div className="bg-black border border-white/20 rounded-2xl p-4 space-y-3 relative">
         <input
           type="text"
           placeholder="Confession Lekhna Darako?"
@@ -173,18 +171,33 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Emoji picker */}
+              
+            {/* ✅ Smart Emoji Picker */}
+            
             <div className="relative" ref={emojiRef}>
-              <button onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+              <button
+                id="emoji-button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              >
                 <MoodSmile size={20} />
               </button>
+
               {showEmojiPicker && (
-                <div className="absolute top-8 right-0 z-50">
-                  <EmojiPicker
-                    onEmojiClick={handleEmojiClick}
-                    theme="dark"
-                    width={300}
-                  />
+                <div
+                  className="absolute z-[99999]"
+                  style={{
+                    top: "1.8rem",
+                    right: 0,
+                    position: "absolute",
+                  }}
+                >
+                  <div className="relative z-30">
+                    <EmojiPicker
+                      onEmojiClick={handleEmojiClick}
+                      theme={Theme.DARK}
+                      width={300}
+                    />
+                  </div>
                 </div>
               )}
             </div>

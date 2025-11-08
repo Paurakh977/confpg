@@ -3,7 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import LeftBar from "../components/Leftbar";
 import RightBar from "../components/Rightbar";
-import { SearchProvider } from "@/context/SearchContext"; // context provider
+import { SearchProvider } from "@/context/SearchContext";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,21 +35,24 @@ export default function RootLayout({
         className={`bg-black text-white ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SearchProvider>
-          {/* Full-page layout with fixed sidebars and scrollable main content */}
           <div className="flex h-screen overflow-hidden">
-            {/* Left Sidebar (fixed width) */}
+            {/* Left Sidebar */}
             <div className="w-72 flex-shrink-0 border-r border-white/10 overflow-y-auto">
               <LeftBar />
             </div>
 
-            {/* Main Content (scrollable only here) */}
-            <main className="flex-1 overflow-y-auto border-r border-white/10 p-6 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-              {children}
+            {/* Main Content */}
+            <main className="flex-1 overflow-y-auto border-r border-white/10 p-6 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent relative z-20">
+              <Suspense fallback={<p className="text-gray-500 p-4">Loading content...</p>}>
+                {children}
+              </Suspense>
             </main>
 
-            {/* Right Sidebar (fixed width) */}
+            {/* Right Sidebar */}
             <div className="w-80 flex-shrink-0 p-4 overflow-y-auto border-l border-white/10">
-              <RightBar />
+              <Suspense fallback={<div className="text-gray-500">Loading sidebar...</div>}>
+                <RightBar />
+              </Suspense>
             </div>
           </div>
         </SearchProvider>

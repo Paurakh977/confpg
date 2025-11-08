@@ -3,17 +3,17 @@ import { NextResponse } from "next/server";
 
 export async function POST(
   _req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ confessionId: string }> }
 ) {
   try {
-    const { id } = await context.params; // 👈 await again
+    const { confessionId } = await context.params; // 👈 await again
 
-    if (!id) {
+    if (!confessionId) {
       return NextResponse.json({ error: "Missing ID" }, { status: 400 });
     }
 
     const updated = await prisma.confession.update({
-      where: { id },
+      where: { id: confessionId },
       data: { downvotes: { increment: 1 } },
     });
 

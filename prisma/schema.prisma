@@ -28,11 +28,13 @@ model Confession {
 }
 
 model Comment {
-  id           String      @id @default(cuid())
-  confessionId String
+  id           String   @id @default(cuid())
   text         String
-  createdAt    DateTime    @default(now())
-  confession   Confession  @relation(fields: [confessionId], references: [id])
+  createdAt    DateTime @default(now())
+  upvotes      Int      @default(0)
+  downvotes    Int      @default(0)
+  confessionId String
+  confession   Confession @relation(fields: [confessionId], references: [id], onDelete: Cascade)
 }
 
 enum Gender {

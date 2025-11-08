@@ -9,7 +9,8 @@ import {
 } from "tabler-icons-react";
 import { departmentColors, departmentFullNames } from "@/lib/departmentColors";
 import { yearColors } from "@/lib/yearColors";
-import Comments from "./Comments"; // 👈 import the new component
+import Comments from "./Comments";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface PostCardProps {
   id: string;
@@ -74,7 +75,10 @@ export default function PostCard({
   const yearStyle = year ? yearColors[year] || "bg-gray-500/30 text-gray-300" : "";
 
   return (
-    <div className="w-full border border-white/20 rounded-lg p-4 bg-black text-white space-y-3 shadow-sm hover:shadow-md transition">
+    <motion.div
+      layout
+      className="w-full border border-white/20 rounded-lg p-4 bg-black text-white space-y-3 shadow-sm hover:shadow-md transition"
+    >
       <p className="text-2xl font-semibold leading-snug">{text}</p>
 
       <div className="flex flex-col text-gray-400 text-sm space-y-1">
@@ -132,8 +136,20 @@ export default function PostCard({
         </div>
       </div>
 
-      {/* Comment Section */}
-      {showComments && <Comments confessionId={id} />}
-    </div>
+      {/* Animated Comment Section */}
+      <AnimatePresence initial={false}>
+        {showComments && (
+          <motion.div
+            key="comments"
+            initial={{ opacity: 0, height: 0, y: -10 }}
+            animate={{ opacity: 1, height: "auto", y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -10 }}
+            transition={{ duration: 0.35, ease: "easeInOut" }}
+          >
+            <Comments confessionId={id} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
