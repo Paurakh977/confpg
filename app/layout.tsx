@@ -18,8 +18,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "KU Confessions",
   description: "Kathmandu University Confessions Platform",
+  manifest: "/manifest.json",
   icons: {
-    icon: "/logo.png",
+    icon: [
+      { url: "/parody_logo.png" },
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icons/icon-512x512.png",
   },
 };
 
