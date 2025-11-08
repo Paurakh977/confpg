@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Confession {
+  id             String    @id @default(cuid())
+  text           String
+  department     String
+  gender         String?
+  year           Int?
+  upvotes        Int       @default(0)
+  downvotes      Int       @default(0)
+  commentsCount  Int       @default(0)
+  views          Int       @default(0)
+  createdAt      DateTime  @default(now())
+  comments       Comment[] // relation
+}
+
+model Comment {
+  id           String      @id @default(cuid())
+  confessionId String
+  text         String
+  createdAt    DateTime    @default(now())
+  confession   Confession  @relation(fields: [confessionId], references: [id])
+}
+
+enum Gender {
+  male
+  female
+}
+
+enum Department {
+  CD       // Craft & Design
+  FA       // Fine Arts
+  CDV      // Community Development
+  ECO      // Economics
+  MS       // Media Studies
+  ENGMCJ   // English & Mass Comm/Journalism
+  EM       // Ethnomusicology
+  YS       // Yogic Science
+  TESOL
+  TCSOL
+  MATHED
+  CIVTED
+  ITED
+  ARCH
+  HC
+  AI
+  CHE
+  CE
+  MINE
+  CSE
+  BIT
+  CS
+  CYBER
+  EEE
+  GEOM
+  ME
+  BECLL
+  BBMLL
+  BBIS
+  BPH
+  BBA
+  AG
+  BIOINF
+  BT
+  ENVENG
+  ENVS
+  DS
+  CM
+  PHARM
+  AP
+  LAW
+}
+
+

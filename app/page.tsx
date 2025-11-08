@@ -1,65 +1,271 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+import PostCard from "../components/PostCard";
+import {
+  Photo,
+  Gif,
+  CircleDashed,
+  MoodSmile,
+  ListDetails,
+} from "tabler-icons-react";
+import { departmentColors } from "@/lib/departmentColors";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+
+interface Confession {
+  id: string;
+  text: string;
+  department: string;
+  gender?: "male" | "female";
+  year?: number;
+  upvotes: number;
+  downvotes: number;
+  commentsCount: number;
+  views: number;
+  createdAt: string;
+}
+
+export default function HomePage() {
+  const MAX_LENGTH = 300;
+  const COOLDOWN = 30 * 1000;
+
+  const [newConfession, setNewConfession] = useState("");
+  const [gender, setGender] = useState<"male" | "female">("male");
+  const [department, setDepartment] = useState("CS");
+  const [year, setYear] = useState<number>(1);
+  const [confessions, setConfessions] = useState<Confession[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showDeptDropdown, setShowDeptDropdown] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [lastPostTime, setLastPostTime] = useState<number>(0);
+
+  const emojiRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+
+  const program = searchParams.get("program");
+  const search = searchParams.get("search");
+
+  // ✅ Fetch confessions (supports program + search filter)
+  useEffect(() => {
+    const fetchConfessions = async () => {
+      try {
+        let url = "/api/confessions";
+
+        if (program) {
+          // ✅ department filter
+          url = `/api/confessions?department=${program.toUpperCase()}`;
+        } else if (search) {
+          // ✅ search filter
+          url = `/api/confessions?search=${encodeURIComponent(search)}`;
+        }
+
+        const res = await fetch(url);
+        const data = await res.json();
+        setConfessions(data);
+      } catch (err) {
+        console.error("fetch error:", err);
+      }
+    };
+    fetchConfessions();
+  }, [program, search]);
+
+  // ✅ Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
+        setShowEmojiPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleEmojiClick = (emoji: EmojiClickData) => {
+    setNewConfession((prev) => prev + emoji.emoji);
+  };
+
+  // ✅ Post a new confession
+  const handlePost = async () => {
+    if (!newConfession.trim()) return alert("Write something first!");
+    if (newConfession.length > MAX_LENGTH)
+      return alert(`Limit: ${MAX_LENGTH} characters.`);
+
+    const now = Date.now();
+    if (now - lastPostTime < COOLDOWN) {
+      const wait = Math.ceil((COOLDOWN - (now - lastPostTime)) / 1000);
+      return alert(`Slow down — wait ${wait}s before posting again.`);
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/confessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: newConfession, department, gender, year }),
+      });
+      if (res.ok) {
+        setNewConfession("");
+        setLastPostTime(now);
+        const updated = await fetch("/api/confessions");
+        const data = await updated.json();
+        setConfessions(data);
+      }
+    } catch (err) {
+      console.error("post error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="flex flex-col space-y-6 w-full relative">
+      {/* Confession Composer */}
+      <div className="bg-black border border-white/20 rounded-2xl p-4 space-y-3">
+        <input
+          type="text"
+          placeholder="Confession Lekhna Darako?"
+          className="w-full bg-transparent text-white placeholder-gray-500 text-lg focus:outline-none"
+          value={newConfession}
+          onChange={(e) => setNewConfession(e.target.value)}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+
+        <p
+          className={`text-sm ${
+            newConfession.length > MAX_LENGTH ? "text-red-400" : "text-gray-400"
+          }`}
+        >
+          {newConfession.length}/{MAX_LENGTH}
+        </p>
+
+        <div className="flex items-center justify-between pt-2 relative">
+          {/* Toolbar */}
+          <div className="flex items-center space-x-4 text-blue-500">
+            <Photo size={20} />
+            <Gif size={20} />
+            <CircleDashed size={20} />
+
+            {/* Department dropdown */}
+            <div className="relative">
+              <button onClick={() => setShowDeptDropdown(!showDeptDropdown)}>
+                <ListDetails size={20} />
+              </button>
+              {showDeptDropdown && (
+                <div className="absolute top-8 left-0 bg-gray-900 border border-gray-700 rounded-md shadow-lg p-2 z-50 max-h-64 overflow-y-auto w-80 grid grid-cols-2 gap-2">
+                  {Object.keys(departmentColors).map((dept) => (
+                    <button
+                      key={dept}
+                      onClick={() => {
+                        setDepartment(dept);
+                        setShowDeptDropdown(false);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                        departmentColors[dept]
+                          ? departmentColors[dept]
+                          : "text-gray-400"
+                      } hover:bg-gray-700`}
+                      title={dept}
+                    >
+                      {dept}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Emoji picker */}
+            <div className="relative" ref={emojiRef}>
+              <button onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+                <MoodSmile size={20} />
+              </button>
+              {showEmojiPicker && (
+                <div className="absolute top-8 right-0 z-50">
+                  <EmojiPicker
+                    onEmojiClick={handleEmojiClick}
+                    theme="dark"
+                    width={300}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Gender + Year */}
+          <div className="flex items-center space-x-3 ml-auto mr-4">
+            <span className="text-gray-400 text-sm">I'm a</span>
+
+            <div className="flex border border-gray-600 rounded-full overflow-hidden">
+              <button
+                onClick={() => setGender("male")}
+                className={`px-3 py-1 text-sm font-medium transition ${
+                  gender === "male"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-400 hover:bg-gray-800"
+                }`}
+              >
+                keta
+              </button>
+              <button
+                onClick={() => setGender("female")}
+                className={`px-3 py-1 text-sm font-medium transition ${
+                  gender === "female"
+                    ? "bg-pink-500 text-white"
+                    : "text-gray-400 hover:bg-gray-800"
+                }`}
+              >
+                keti
+              </button>
+            </div>
+
+            <select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="bg-gray-800 text-gray-200 text-sm rounded-full px-3 py-1 focus:outline-none border border-gray-700 hover:border-gray-500"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+              <option value={1}>1st Year</option>
+              <option value={2}>2nd Year</option>
+              <option value={3}>3rd Year</option>
+              <option value={4}>4th Year</option>
+            </select>
+          </div>
+
+          {/* Post Button */}
+          <button
+            onClick={handlePost}
+            disabled={!newConfession.trim() || loading}
+            className={`px-4 py-1.5 text-sm font-semibold rounded-full transition ${
+              newConfession.trim()
+                ? "bg-blue-500 text-white hover:bg-blue-600"
+                : "bg-gray-700 text-gray-400 cursor-not-allowed"
+            }`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            {loading ? "Posting..." : "Post"}
+          </button>
+        </div>
+      </div>
+
+      {/* Confessions Feed */}
+      <div className="flex flex-col space-y-4">
+        {confessions.length > 0 ? (
+          confessions.map((post) => (
+            <PostCard
+              key={post.id}
+              id={post.id}
+              text={post.text}
+              department={post.department}
+              gender={post.gender}
+              year={post.year}
+              createdAt={new Date(post.createdAt)}
+              upvotes={post.upvotes}
+              downvotes={post.downvotes}
+              commentsCount={post.commentsCount}
+              views={post.views}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+          ))
+        ) : (
+          <p className="text-gray-500 text-center">No confessions yet 😶</p>
+        )}
+      </div>
     </div>
   );
 }
